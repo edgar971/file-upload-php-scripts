@@ -4,11 +4,45 @@ require_once('thumbnail.php');
 
 class thumbnail_upload extends file_upload {
 	
+	//generated thumbnail destination
 	protected $_thumbDestination;
+	//option to delete the original image
 	protected $_deleteOriginal;
+	//suffix given to the thumbnail image
 	protected $_suffix = '-small';
+	//max width and height size of the thumbnail
 	protected $_maxthumbsize = 120;
-	
+
+	//privated function to process the image
+	protected function processFile($fileName, $error, $type, $size, $tmp_name, $overwrite){
+		$ok = $this->checkError($fileName, $error);
+		if ($ok) {
+		$sizeOk = $this->checkFileSize($fileName, $size);
+		$typeOk = $this->checkFileType($fileName, $type);
+		if ($sizeOk && $typeOk){
+		$name = $this->checkFileName($fileName, $overwrite);
+		$success = move_uploaded_file($tmp_name, $this->_destination . $name);
+		if ($success) {
+		$this->_filenames[] = $name;
+		if(!$this->_deleteOriginal) {
+			$message = $fileName . ' uploaded successfully';
+			if($this->_renamed){
+				$message .= " and renamed $name";
+			} 
+			$this->_messages[] = $message;
+		  }
+		 $this->createThumbnail($this->_destination . $name);
+		 if($this->_deleteOriginal) {
+			 unlink($this->_destination . $name);
+		 } 	
+		} else {
+			$this->_messages[] = 'Failed to upload ' . $fileName;
+			}
+		  }
+		
+		}		
+		
+	}
 	
 	public function __construct($path, $deleteOriginal = false) {
 		parent::__construct($path);
@@ -46,35 +80,6 @@ class thumbnail_upload extends file_upload {
 	}
 	
 	
-		protected function processFile($fileName, $error, $type, $size, $tmp_name, $overwrite){
-		$ok = $this->checkError($fileName, $error);
-		if ($ok) {
-		$sizeOk = $this->checkFileSize($fileName, $size);
-		$typeOk = $this->checkFileType($fileName, $type);
-		if ($sizeOk && $typeOk){
-		$name = $this->checkFileName($fileName, $overwrite);
-		$success = move_uploaded_file($tmp_name, $this->_destination . $name);
-		if ($success) {
-		$this->_filenames[] = $name;
-		if(!$this->_deleteOriginal) {
-			$message = $fileName . ' uploaded successfully';
-			if($this->_renamed){
-				$message .= " and renamed $name";
-			} 
-			$this->_messages[] = $message;
-		  }
-		 $this->createThumbnail($this->_destination . $name);
-		 if($this->_deleteOriginal) {
-			 unlink($this->_destination . $name);
-		 } 	
-		} else {
-			$this->_messages[] = 'Failed to upload ' . $fileName;
-			}
-		  }
-		
-		}		
-		
-	}
 	
 	
 	
